@@ -11,8 +11,10 @@ class ManaSimulation:
         self.starting_mana = starting_mana  # Starting mana for the simulation
         self.possible_indices = range(1, 13)  # Card indices (1 to 12)
         self.possible_hands = [tuple(sorted(hand)) for hand in itertools.combinations(self.possible_indices, 4)]  # Pre-sort hands  # All combinations of hands (4 cards each)]
+        self.base_hands = [tuple(sorted(hand)) for hand in itertools.combinations(self.possible_indices, 4)]
         self.max_subsets_history = []
         self.optimal_subsets = self.precompute_max_subsets()
+        self.future_hand_counts = [0]*495
 
     def precompute_max_subsets(self):
         """
@@ -61,21 +63,19 @@ class ManaSimulation:
                 # if hand_index==0:
                 #     print([hand+x for x in combinations])
                 for combo in combinations:
-                    completed_tuple = hand + combo
-                    filled_hands.append(tuple(sorted(completed_tuple)))
+                    completed_tuple = tuple(sorted(hand + combo))
+                    filled_hands.append(completed_tuple)
                     new_history.append(self.max_subsets_history[hand_index])
+                    self.future_hand_counts[self.base_hands.index(completed_tuple)]+=1
             else:
                 filled_hands.append(tuple(sorted(hand)))
                 new_history.append(self.max_subsets_history[hand_index])
+                self.future_hand_counts[self.base_hands.index(completed_tuple)]+=1
+        filled_hands.sort()
+        new_history = [x for _, x in sorted(zip(filled_hands, new_history), key=lambda pair: pair[0])]
+        # print(filled_hands[0:10])
         return filled_hands, new_history
 
-    def shift_mana_history(histories):
-        new_histories = histories
-        for hist in new_histories:
-            while len(hist)>8:
-                hist.pop(0)
-        return new_histories
-            
     def calculate_avg_wasted_mana(self):
         """
         Calculate the average wasted mana across multiple turns.
@@ -86,21 +86,30 @@ class ManaSimulation:
         for current_turn in range(self.starting_mana, self.max_turn + 1):
             if current_turn != self.starting_mana:
                 for p in range(len(self.possible_hands)):
-                    self.possible_hands[p] = tuple([x for x in self.possible_hands[p] if x not in self.max_subsets_history[p]])
+                    self.possible_hands[p] = tuple([x for x in self.possible_hands[p] if x not in self.max_subsets_history[p][-8:]])
                 # Fill hands for the next turn
                 self.possible_hands, self.max_subsets_history = self.fill_hands(max_subsets)
             max_subsets = []
             total_wasted_mana = 0
-            for hand in tqdm(self.possible_hands, desc="Processing Mana {0}".format(current_turn)):
+            h=0
+            for hand in tqdm(self.base_hands, desc="Processing Mana {0}".format(current_turn)):
                 max_subset = self.optimal_subsets[current_turn-3][hand]
                 max_mana_used = sum([self.deck[l-1] for l in max_subset])
 
                 # Calculate wasted mana for this hand
-                wasted_mana = current_turn - max_mana_used
+                if current_turn != self.starting_mana:
+                    wasted_mana = (current_turn - max_mana_used)*self.future_hand_counts[h]
+                else:
+                    wasted_mana = (current_turn - max_mana_used)
                 total_wasted_mana += wasted_mana
 
+
                 #add optimal subset to list of optimal subsets
-                max_subsets.append(max_subset)
+                if current_turn == self.starting_mana:
+                    max_subsets.append(max_subset)
+                else:
+                    for i in range(self.future_hand_counts[h]):
+                        max_subsets.append(max_subset)
 
                 if current_turn == self.starting_mana:
                     self.max_subsets_history=max_subsets.copy()
@@ -109,12 +118,14 @@ class ManaSimulation:
                     for index, maximal in enumerate(max_subsets):
                         self.max_subsets_history[index] = tuple(self.max_subsets_history[index])+tuple(maximal)
                     # print("done???")
+                print(sum(self.future_hand_counts))
+                h+=1
 
 
             # Calculate average wasted mana per hand
+            self.future_hand_counts = [0]*495
             avg_wasted_mana_per_hand = total_wasted_mana / len(max_subsets)
             total_mana += avg_wasted_mana_per_hand
-
         return total_mana / (self.max_turn - self.starting_mana)
 
 
@@ -122,4 +133,4 @@ class ManaSimulation:
 # Example usage
 deck = [1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6]
 simulation = ManaSimulation(deck, max_turn=4)
-print("TOTAL MANA:", simulation.calculate_avg_wasted_mana())
+print("AVG MANA WASTE:", simulation.calculate_avg_wasted_mana())

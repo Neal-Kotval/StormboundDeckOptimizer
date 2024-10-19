@@ -1,4 +1,4 @@
-#!/Users/nealkotval/deck_optimizer/deck_optimizer/bin/python3.12
+#!/Users/nealkotval/StormboundDeckOptimizer/StormboundDeckOptimizer/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

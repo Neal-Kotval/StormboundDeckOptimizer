@@ -1,4 +1,5 @@
 import itertools
+from tqdm import tqdm
 
 class ManaSimulation:
     def __init__(self, deck, max_turn, starting_mana=3):
@@ -9,8 +10,7 @@ class ManaSimulation:
         self.max_turn = max_turn  # The maximum number of turns
         self.starting_mana = starting_mana  # Starting mana for the simulation
         self.possible_indices = range(1, 13)  # Card indices (1 to 12)
-        self.possible_hands = list(itertools.combinations(self.possible_indices, 4))  # All combinations of hands (4 cards each)]
-        self.max_subset_identifiers = [[1]*495]
+        self.possible_hands = [tuple(sorted(hand)) for hand in itertools.combinations(self.possible_indices, 4)]  # Pre-sort hands  # All combinations of hands (4 cards each)]
         self.max_subsets_history = []
         self.optimal_subsets = self.precompute_max_subsets()
 
@@ -24,7 +24,7 @@ class ManaSimulation:
             turn_dict = {}  # Dictionary for this turn
 
             for hand in self.possible_hands:
-                subsets = [subset for subset in itertools.chain.from_iterable(itertools.combinations(hand, r) for r in range(1, len(hand) + 1))]
+                subsets = itertools.chain.from_iterable(itertools.combinations(hand, r) for r in range(1, len(hand) + 1))
                 max_mana_used, max_subset = 0, []
 
                 # Find the maximal subset for the current turn's mana budget
@@ -62,10 +62,10 @@ class ManaSimulation:
                 #     print([hand+x for x in combinations])
                 for combo in combinations:
                     completed_tuple = hand + combo
-                    filled_hands.append(completed_tuple)
+                    filled_hands.append(tuple(sorted(completed_tuple)))
                     new_history.append(self.max_subsets_history[hand_index])
             else:
-                filled_hands.append(hand)
+                filled_hands.append(tuple(sorted(hand)))
                 new_history.append(self.max_subsets_history[hand_index])
         return filled_hands, new_history
 
@@ -91,8 +91,8 @@ class ManaSimulation:
                 self.possible_hands, self.max_subsets_history = self.fill_hands(max_subsets)
             max_subsets = []
             total_wasted_mana = 0
-            for hand in self.possible_hands:
-                max_subset = self.optimal_subsets[current_turn-3][tuple(sorted(hand))]
+            for hand in tqdm(self.possible_hands, desc="Processing Mana {0}".format(current_turn)):
+                max_subset = self.optimal_subsets[current_turn-3][hand]
                 max_mana_used = sum([self.deck[l-1] for l in max_subset])
 
                 # Calculate wasted mana for this hand
@@ -103,11 +103,11 @@ class ManaSimulation:
                 max_subsets.append(max_subset)
 
                 if current_turn == self.starting_mana:
-                    self.max_subsets_history=max_subsets
+                    self.max_subsets_history=max_subsets.copy()
                 else:
                     # print("doing???")
                     for index, maximal in enumerate(max_subsets):
-                        self.max_subsets_history[index] = self.max_subsets_history[index]+tuple(maximal)
+                        self.max_subsets_history[index] = tuple(self.max_subsets_history[index])+tuple(maximal)
                     # print("done???")
 
 

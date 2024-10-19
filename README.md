@@ -1,6 +1,6 @@
 # StormboundDeckOptimizer
 
-Welcome to the **Stormbound Mana Optimization** project! This is a Python-based simulation designed to analyze and optimize mana usage in the game **Stormbound**. If you’re unfamiliar with Stormbound, it’s a strategy card game where players build decks of 12 cards and use those cards in turns to destroy the enemy's base.
+Welcome to the **Stormbound Deck Optimization** project! This is a Python-based simulation designed to analyze and optimize mana usage in the game **Stormbound**. If you’re unfamiliar with Stormbound, it’s a strategy card game where players build decks of 12 cards and use those cards in turns to destroy the enemy's base.
 
 This project explores ways to **optimize the mana economy** in Stormbound by minimizing mana wastage through various mathematical techniques. It’s the first step in an ambitious multi-part series aiming to find the **best deck** in Stormbound.
 

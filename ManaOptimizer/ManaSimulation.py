@@ -84,7 +84,7 @@ class ManaSimulation:
         total_mana = 0
         max_subsets = []
 
-        for current_turn in range(self.starting_mana, self.max_turn + 1):
+        for current_turn in range(self.starting_mana, self.max_turn+1):
             if current_turn != self.starting_mana:
                 for p in range(len(self.possible_hands)):
                     self.possible_hands[p] = tuple([x for x in self.possible_hands[p] if x not in self.max_subsets_history[p][-8:]])
@@ -117,10 +117,8 @@ class ManaSimulation:
                 if current_turn == self.starting_mana:
                     self.max_subsets_history=max_subsets.copy()
                 else:
-                    # print("doing???")
                     for index, maximal in enumerate(max_subsets):
                         self.max_subsets_history[index] = tuple(self.max_subsets_history[index])+tuple(maximal)
-                    # print("done???")
 
                 h+=1
             print(len(self.max_subsets_history))
